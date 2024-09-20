@@ -3,17 +3,17 @@ import json
 import cv2
 
 def copy_image(filename, idx):
-    image = cv2.imread(filename)
-    cv2.imwrite(f"test/{idx}.jpg", image)
+    image = cv2.imread(filename) # read image
+    cv2.imwrite(f"test/{idx}.jpg", image) # save image in test directory
 
 def find_image(filepath, filename):
 
+    # read json file in directory
     with open(filepath, 'r') as f:
         data = json.load(f)
 
-    for idx in range(len(data)):
-        if data[idx]['img_name'] == filename:
-            return data[idx]
+    idx = filename.split('.')[0] # remove extension
+    return data[int(idx)] # return annotation
         
 def write_image(data):
 
@@ -30,17 +30,22 @@ def main():
     img_id = 0
     directories = []
 
-    for i in os.listdir():
-        if os.path.isdir(i) and i != 'test':
-            directories.append(i)
+    # get all directories
+    # Get the current working directory
+    current_directory = os.getcwd()
 
-    directories = sorted(directories, key=lambda x: int(x.split('_')[0]))
+    # List directories excluding 'test' and sort numerically
+    directories = [d for d in os.listdir(current_directory) 
+                if os.path.isdir(os.path.join(current_directory, d)) 
+                and d.isdigit()]
+    directories = sorted(directories, key=lambda x: int(x))
+    
     json_data = []
 
     for dir in directories:
-        images = os.listdir(dir)
-        images = sorted(images, key=lambda x: float('inf') if x == 'annotations.json' else int(x.split('.')[0])) # sort images
         print("Current directory: \n", dir)
+        images = os.listdir(dir)
+        images = sorted(images, key=lambda x: float('inf') if x == 'annotations.json' else int(x.split('.')[0])) # list of images   
         print("Images in dir: \n", images)
         
         for img in images:
@@ -49,6 +54,7 @@ def main():
                 copy_image(dir + '/' + img, img_id)
                 img_data = find_image(path, img) # get annotation
                 dimensions = normalize_dimensions(img_data["dimensions"])
+    
                 data = {
                     "image" : img_id,
                     "whd" : dimensions,
